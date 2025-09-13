@@ -14,15 +14,25 @@
 - 支持 OpenAI 的 SSE 流式响应（通过禁用响应缓冲、启用 HTTP/2 等）
 
 ## 配置改动
-在 `/etc/caddy/Caddyfile` 中新增站点块：
+在 `/etc/caddy/Caddyfile` 中新增/更新站点块（隐私加固：不向上游暴露客户端 IP，访问日志中删除 IP 字段）：
 
 ```caddy
 # Reverse proxy for OpenAI API with SSE streaming support
 openai-proxy.codex.hk {
-    # 该站点的访问日志
+    # 访问日志：使用 filter 编码器，删除客户端 IP 相关字段
     log {
         output file /var/log/caddy/openai-proxy.log
-        format console
+        format filter {
+            wrap json
+            fields {
+                request>remote_addr delete
+                request>remote_ip delete
+                request>headers>x-forwarded-for delete
+                request>headers>cf-connecting-ip delete
+                request>headers>x-real-ip delete
+                request>headers>true-client-ip delete
+            }
+        }
         level INFO
     }
 
@@ -30,11 +40,16 @@ openai-proxy.codex.hk {
     reverse_proxy https://api.openai.com {
         # 确保 Host/SNI 正确
         header_up Host api.openai.com
-        # 保留鉴权头与常见代理头
+        # 仅透传鉴权等必要头，不上送任何客户端 IP 相关头
         header_up Authorization {http.request.header.Authorization}
         header_up X-Forwarded-Host {host}
         header_up X-Forwarded-Proto {scheme}
-        header_up X-Forwarded-For {remote}
+        # 隐私加固：明确删除可能暴露客户端 IP 的头
+        header_up -X-Forwarded-For
+        header_up -Forwarded
+        header_up -X-Real-IP
+        header_up -CF-Connecting-IP
+        header_up -True-Client-IP
 
         # SSE：尽量不缓冲响应，实时刷出
         flush_interval -1
@@ -50,7 +65,7 @@ openai-proxy.codex.hk {
 说明：
 - `flush_interval -1` 关闭响应缓冲，有利于 SSE token 逐步输出。
 - `transport http { versions h2 h1.1 }` 允许与上游（OpenAI）使用 HTTP/2，进一步优化流式体验。
-- Caddy 默认会透传大部分头部，`X-Forwarded-*` 三行可选（可删除），保留不影响功能。
+- 出于隐私，删除了所有可能上送客户端 IP 的头，并在访问日志中过滤 IP 字段。
 
 ## 应用配置
 - 语法校验：`caddy validate --config /etc/caddy/Caddyfile`
@@ -59,6 +74,10 @@ openai-proxy.codex.hk {
 若需要查看服务状态：
 - `systemctl status --no-pager caddy`
 - `journalctl -u caddy --no-pager -n 200`
+
+隐私校验：
+- 发起一次请求后，查看 `/var/log/caddy/openai-proxy.log`，应看不到 `request.remote_ip` 或 `x-forwarded-for` 等字段。
+- 使用 `curl -v` 访问 `/v1/models` 并抓包/查看请求头，应无 `X-Forwarded-For`、`X-Real-IP`、`Forwarded`、`CF-Connecting-IP`、`True-Client-IP` 等头被上送。
 
 ## 证书与监听
 - Caddy 自动为 `openai-proxy.codex.hk` 申请并管理 TLS 证书（Let’s Encrypt/ACME）。
@@ -127,6 +146,7 @@ curl -N https://openai-proxy.codex.hk/v1/chat/completions \
 ## 安全注意
 - 代理会透传 `Authorization` 到上游 OpenAI，请保证代理主机安全、日志不要记录敏感信息（本配置未记录请求体）。
 - 与上游通信全程 TLS，`tls_server_name` 指定为 `api.openai.com` 保证 SNI 与证书校验一致。
+- 已默认移除一切可能暴露客户端 IP 的请求头，并在访问日志中过滤客户端 IP 字段。
 
 ## 变更摘要（此次操作）
 - 在 `/etc/caddy/Caddyfile` 新增 `openai-proxy.codex.hk` 站点块，反代到 `https://api.openai.com`。
@@ -136,7 +156,7 @@ curl -N https://openai-proxy.codex.hk/v1/chat/completions \
 - 通过 `curl -I /v1/models` 验证连通性（返回 401 为预期）。
 
 ---
-如需我将冗余的 `X-Forwarded-*` 三行移除并统一格式化 Caddyfile，可告知，我可直接更新并重载服务。
+如需进一步禁用访问日志，或增加更多字段脱敏（UA、Referer 等），可告知，我可直接更新并重载服务。
 
 ## 快速测试（隐藏 Bearer 示例）
 
