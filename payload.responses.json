@@ -1,0 +1,19 @@
+{
+  "model": "gpt-5-mini",
+  "input": [
+    {
+      "role": "system",
+      "content": [
+        {"type": "input_text", "text": "You are an AI assistant that helps people find information."}
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {"type": "input_text", "text": "hi"}
+      ]
+    }
+  ],
+  "stream": true
+}
+
