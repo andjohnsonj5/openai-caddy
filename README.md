@@ -90,6 +90,7 @@ chatgpt.codex.hk {
 
     reverse_proxy https://chatgpt.com {
         header_up Host chatgpt.com
+        header_up Authorization {http.request.header.Authorization}
         header_up X-Forwarded-Host {host}
         header_up X-Forwarded-Proto {scheme}
         header_up -X-Forwarded-For
@@ -113,7 +114,7 @@ chatgpt.codex.hk {
 - `flush_interval -1` 关闭响应缓冲，有利于 SSE token 逐步输出；对 `openai-proxy.codex.hk` 和 `chatgpt.codex.hk` 均启用，确保聊天与后台接口都能以 SSE 流式返回。
 - `transport http { versions h2 h1.1 }` 允许与上游（OpenAI）使用 HTTP/2，进一步优化流式体验。
 - 出于隐私，删除了所有可能上送客户端 IP 的头，并在访问日志中过滤 IP 字段。
-- `chatgpt.codex.hk` 采用完整反向代理，前端页面与 `/backend-api` 等接口均直接命中 `chatgpt.com`。
+- `chatgpt.codex.hk` 与 `openai-proxy.codex.hk` 一样，仅透传认证等必要头部（如 `Authorization`），不会新增任何客户端 IP 相关头；同时采用完整反向代理，使前端页面与 `/backend-api` 等接口均直接命中 `chatgpt.com`。
 
 ## 应用配置
 - 语法校验：`caddy validate --config /etc/caddy/Caddyfile`

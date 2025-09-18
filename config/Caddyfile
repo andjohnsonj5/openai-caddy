@@ -3,76 +3,77 @@
 
 # Reverse proxy for OpenAI API with SSE streaming support
 openai-proxy.codex.hk {
-    # Access log with filtered client IP fields for privacy
-    log {
-        output file {$CADDY_LOG_DIR:/var/log/caddy}/openai-proxy.log
-        format filter {
-            wrap json
-            fields {
-                request>remote_addr delete
-                request>remote_ip delete
-                request>headers>x-forwarded-for delete
-                request>headers>cf-connecting-ip delete
-                request>headers>x-real-ip delete
-                request>headers>true-client-ip delete
-            }
-        }
-        level INFO
-    }
+	# Access log with filtered client IP fields for privacy
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/openai-proxy.log
+		format filter {
+			wrap json
+			fields {
+				request>remote_addr delete
+				request>remote_ip delete
+				request>headers>x-forwarded-for delete
+				request>headers>cf-connecting-ip delete
+				request>headers>x-real-ip delete
+				request>headers>true-client-ip delete
+			}
+		}
+		level INFO
+	}
 
-    reverse_proxy https://api.openai.com {
-        header_up Host api.openai.com
-        header_up Authorization {http.request.header.Authorization}
-        header_up X-Forwarded-Host {host}
-        header_up X-Forwarded-Proto {scheme}
-        header_up -X-Forwarded-For
-        header_up -Forwarded
-        header_up -X-Real-IP
-        header_up -CF-Connecting-IP
-        header_up -True-Client-IP
+	reverse_proxy https://api.openai.com {
+		header_up Host api.openai.com
+		header_up Authorization {http.request.header.Authorization}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up -X-Forwarded-For
+		header_up -Forwarded
+		header_up -X-Real-IP
+		header_up -CF-Connecting-IP
+		header_up -True-Client-IP
 
-        flush_interval -1
+		flush_interval -1
 
-        transport http {
-            versions h2 h1.1
-            tls_server_name api.openai.com
-        }
-    }
+		transport http {
+			versions h2 h1.1
+			tls_server_name api.openai.com
+		}
+	}
 }
 
 # Reverse proxy chatgpt.codex.hk to chatgpt.com
 chatgpt.codex.hk {
-    log {
-        output file {$CADDY_LOG_DIR:/var/log/caddy}/chatgpt.log
-        format filter {
-            wrap json
-            fields {
-                request>remote_addr delete
-                request>remote_ip delete
-                request>headers>x-forwarded-for delete
-                request>headers>cf-connecting-ip delete
-                request>headers>x-real-ip delete
-                request>headers>true-client-ip delete
-            }
-        }
-        level INFO
-    }
+	log {
+		output file {$CADDY_LOG_DIR:/var/log/caddy}/chatgpt.log
+		format filter {
+			wrap json
+			fields {
+				request>remote_addr delete
+				request>remote_ip delete
+				request>headers>x-forwarded-for delete
+				request>headers>cf-connecting-ip delete
+				request>headers>x-real-ip delete
+				request>headers>true-client-ip delete
+			}
+		}
+		level INFO
+	}
 
-    reverse_proxy https://chatgpt.com {
-        header_up Host chatgpt.com
-        header_up X-Forwarded-Host {host}
-        header_up X-Forwarded-Proto {scheme}
-        header_up -X-Forwarded-For
-        header_up -Forwarded
-        header_up -X-Real-IP
-        header_up -CF-Connecting-IP
-        header_up -True-Client-IP
+	reverse_proxy https://chatgpt.com {
+		header_up Host chatgpt.com
+		header_up Authorization {http.request.header.Authorization}
+		header_up X-Forwarded-Host {host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up -X-Forwarded-For
+		header_up -Forwarded
+		header_up -X-Real-IP
+		header_up -CF-Connecting-IP
+		header_up -True-Client-IP
 
-        flush_interval -1
+		flush_interval -1
 
-        transport http {
-            versions h2 h1.1
-            tls_server_name chatgpt.com
-        }
-    }
+		transport http {
+			versions h2 h1.1
+			tls_server_name chatgpt.com
+		}
+	}
 }
