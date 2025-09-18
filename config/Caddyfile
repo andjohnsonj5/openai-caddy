@@ -68,6 +68,8 @@ chatgpt.codex.hk {
         header_up -CF-Connecting-IP
         header_up -True-Client-IP
 
+        flush_interval -1
+
         transport http {
             versions h2 h1.1
             tls_server_name chatgpt.com

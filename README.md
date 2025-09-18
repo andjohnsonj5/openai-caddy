@@ -98,6 +98,8 @@ chatgpt.codex.hk {
         header_up -CF-Connecting-IP
         header_up -True-Client-IP
 
+        flush_interval -1
+
         transport http {
             versions h2 h1.1
             tls_server_name chatgpt.com
@@ -107,7 +109,7 @@ chatgpt.codex.hk {
 ```
 
 说明：
-- `flush_interval -1` 关闭响应缓冲，有利于 SSE token 逐步输出。
+- `flush_interval -1` 关闭响应缓冲，有利于 SSE token 逐步输出；对 `openai-proxy.codex.hk` 和 `chatgpt.codex.hk` 均启用，确保聊天与后台接口都能以 SSE 流式返回。
 - `transport http { versions h2 h1.1 }` 允许与上游（OpenAI）使用 HTTP/2，进一步优化流式体验。
 - 出于隐私，删除了所有可能上送客户端 IP 的头，并在访问日志中过滤 IP 字段。
 - `chatgpt.codex.hk` 采用完整反向代理，前端页面与 `/backend-api` 等接口均直接命中 `chatgpt.com`。
@@ -191,6 +193,14 @@ chatgpt.codex.hk {
   ```
 
   预期可看到 `HTTP/2 200`（或 Cloudflare 提供的 3xx→200 流程），响应头中的 `server` 字段应与 `chatgpt.com` 保持一致。
+- Backend API 检测：
+
+  ```bash
+  curl -i https://chatgpt.codex.hk/backend-api/codex/responses \
+    -d '{"hello": "world"}'
+  ```
+
+  若返回状态码 `401`，说明上游校验正常，反向代理链路工作正常。
 
 ## 客户端示例
 - Python（`openai` SDK 新版）：
