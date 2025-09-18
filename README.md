@@ -98,6 +98,7 @@ chatgpt.codex.hk {
         header_up -CF-Connecting-IP
         header_up -True-Client-IP
 
+        # SSE：尽量不缓冲响应，实时刷出
         flush_interval -1
 
         transport http {
@@ -185,14 +186,6 @@ chatgpt.codex.hk {
 
 ### `chatgpt.codex.hk → chatgpt.com`
 
-- 浏览器访问 `https://chatgpt.codex.hk`，应直接展示 `chatgpt.com` 页面内容。
-- 命令行验证示例：
-
-  ```bash
-  curl -I https://chatgpt.codex.hk
-  ```
-
-  预期可看到 `HTTP/2 200`（或 Cloudflare 提供的 3xx→200 流程），响应头中的 `server` 字段应与 `chatgpt.com` 保持一致。
 - Backend API 检测：
 
   ```bash
