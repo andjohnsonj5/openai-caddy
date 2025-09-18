@@ -28,4 +28,3 @@ curl -N -sS -X POST "$ENDPOINT" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $OPENAI_API_KEY" \
   --data-binary @"$PAYLOAD_FILE"
-
