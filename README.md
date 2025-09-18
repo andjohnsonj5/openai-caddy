@@ -24,7 +24,7 @@
 openai-proxy.codex.hk {
     # 访问日志：使用 filter 编码器，删除客户端 IP 相关字段
     log {
-        output file {$CADDY_LOG_DIR=/var/log/caddy}/openai-proxy.log
+        output file {$CADDY_LOG_DIR:/var/log/caddy}/openai-proxy.log
         format filter {
             wrap json
             fields {
@@ -73,7 +73,7 @@ openai-proxy.codex.hk {
 # Reverse proxy chatgpt.codex.hk to chatgpt.com
 chatgpt.codex.hk {
     log {
-        output file {$CADDY_LOG_DIR=/var/log/caddy}/chatgpt.log
+        output file {$CADDY_LOG_DIR:/var/log/caddy}/chatgpt.log
         format filter {
             wrap json
             fields {
